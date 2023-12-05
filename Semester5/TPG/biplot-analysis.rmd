@@ -1,0 +1,239 @@
+# Analisis Biplot
+
+Dhea Dewanti & Nur Khamidah
+
+## Pendahuluan
+
+Analisis Biplot (_biplot analysis_) adalah salah satu metode eksplorasi dan reduksi berupa penggambaran/pemetaan antara objek dan peubah berdimensi tinggi ke dalam suatu grafik berdimensi rendah (dua atau tiga sekkaligus). Penggunaan ruang berdimensi rendah dikarenakan kemudahan dalam interpretasi secara grafis. Analisis biplot cocok jika peubah yang dianalisis berskala kuantitatif dan amatannya tidak terlalu banyak. Keakuratan analisis biplot tergantung pada berapa % keragaman total yang dapat diterangkan ke dalam biplot (umumnya minimal 70%). 
+
+Beberapa informasi yang dapat disajikan oleh biplot antara lain:
+
+1. **Keragama suatu peubah**, di mana semakin panjang vektor/panah, maka semakin besar keragaman peubah tersebut.
+2. **Keeratan hubungan antara dua peubah dan arah hubungannya**, di mana:
+    - Jika sudut panah dua peubah < 90 derajat, maka korelasi bernilai positif (semakin kecil sudut mendekati 0 derajat, semakin erat hubungannya secara positif)
+    - Jika sudut panah dua peubah > 90 derajat, maka korelasi negatif (semakin besar sudut mendekati 90 derajat, semakin erat hubungannya seacara negatif)
+    - Jika sudut dua peubah = 90 derajat atau semakin dekat 90 derajat, maka korelasinya semakin mendekati nol (tidak ada korelasi)
+3. **Kemiripan relatif antar objek amatan**, di mana dua objek yang posisinya berdekatan mengartikan bahwa karakteristik keduanya yang mirip.
+4. **Posisi relatif antar objek amatan dengan peubah**, menandakan bahwa objek-objek dicirikan oleh peubah tertentu karena posisinya berdekatan dengan peubah tersebut.
+
+Penguraian matriks **X** dari dimensi tinggi menjadi dimensi dua berupa biplot, dilakukan dengan menggunakan teknik penguraian nilai singular (_Singular Value Decomposition_ / SVD) yang memanfaatkan akar ciri dan vektor ciri matriks **X'X** atau **XX'**. Keragaman yang dijelaskan oleh biplot diperoleh sebesar:
+
+$$\rho_2 = \frac{\lambda_1+\lambda_2}{\sum{\lambda_k}}$$
+
+Di mana:
+
+- $\lambda_1$ : Akar ciri terbesar pertama
+- $\lambda_2$ : Akar ciri terbesar kedua
+- $\lambda_i$ : Akar ciri terbesar ke-i dari **X'X**, i = 1, 2, ..., k
+
+## Langkah-Langkah
+
+Langkah-langkah melakukan analisis biplot secara manual adalah sebagai berikut:
+
+1. Siapkan data dalam bentuk matriks **X**, di mana matriks **X** adalah matriks data yang telah dikoreksi terhadap rata-ratanya
+2. Hitung **X'X** kemudian cari akar cirinya, $\lambda_i$, dan vektor ciri yang bersesuaian
+3. Hitung matriks **U**, **L**, dan **A**
+4. Cari nilai **G** dan **H**
+5. Tentukan G* (kolom ke-1 dan ke-2 dari matriks **G**) sebagai koordinat objek dan H* (kolom ke-1 dan ke-2 matriks **H**) sebagai koordinat peubah
+6. Gambar biplot dengan koordinat G* dan H*
+7. Hitung ukuran kebaikan biplot (besar keragaman yang dapat dijelaskan oleh biplot yang terbentuk)
+
+## Studi Kasus 1
+
+Tabel berikut memberikan data beberapa  universitas dengan beberapa peubah yang digunakan untuk perbandingan/perangkingan universitas, di mana terdiri dari:
+
+- `SAT` : rata-rata nilai SAT mahasiswa baru
+- `Top10` : persentase mahasiswa baru yang merupakan 10% teratas di SMA asal
+- `Accept` : persentase pelamar yang diterima
+- `SFRatio` : rasio fakultas dan mahasiswa
+- `Expenses` : biaya pendidikan tahunan (estimasi), dan
+- `Grad` : rasio kelulusan (%)
+
+##### Menyiapkan data
+
+```{r}
+univs <- read.table(header = T, text = 
+"
+University;SAT;Top10;Accept;SFRatio;Expenses;Grad
+Harvard;14;91;14;11;39.525;97
+Princeton;13.75;91;14;8;30.22;95
+Yale;13.75;95;19;11;43.514;96
+Stanford;13.6;90;20;12;36.45;93
+MIT;13.8;94;30;10;34.87;91
+Duke;13.15;90;30;12;31.585;95
+Dartmouth;13.4;89;23;10;32.162;95
+", sep=";")
+head(univs)
+```
+
+Agar nama-nama objek (universitas) menjadi nama bagi masing-masing baris, maka dilakukan sesuai kode berikut:
+
+```{r}
+rownames(univs) <- univs$University
+univs_new <- univs[,-1] #hapus kolom nama universitas
+head(univs_new)
+```
+
+##### Melakukan eksplorasi data
+
+Diperoleh ringkasan/deskripsi data sebagai berikut.
+
+```{r}
+summary(univs_new)
+```
+
+Dari hasil di atas, diperoleh statistik 5 serangkai dari masing-masing peubah yang menjelaskan universitas.
+
+Kemudian dilakukan visualisasi data menggunakan boxplot sebagai berikut:
+
+```{r}
+boxplot(univs_new)
+```
+
+Boxplot digunakan untuk memeriksa keberadaan pencilan dalam suatu peubah. Terlihat dari plot di atas, bahwa peubah `Grad` memiliki pencilan bawah. Sedangkan 5 peubah lainnya tidak memiliki pencilan.
+Selanjutnya, dilakukan eksplorasi mengenai korelasi antar peubah dengan fungsi `corrplot()`.
+
+```{r}
+library(corrplot)
+corrplot(cor(univs_new), method = "number", is.cor = T, type = "lower", diag=F)
+```
+
+Diperoleh bahwa peubah `Top10` berkorelasi secara positif dengan `SAT` dan `Expenses` Sementara itu, peubah `Top10` berkorelasi negatif dengan peubah `Accept` dan `SFRatio`. Artinya, semakin besar proporsi mahasiswa yang merupakan 10% teratas di sekolah untuk masuk ke universitas tersebut, semakin kecil presentase penerimaannya dan semakin besar presentase kelulusan dan biaya pendidikannya. Dan sebagainya.
+
+##### Analisis biplot
+
+Analisis ini menggunakan beberapa _package_ antara lain:
+
+- `FactoMineR` untuk membentuk fungsi komponen utama
+- `factoextra` untuk membentuk grafik biplot
+
+```{r}
+# install.packages("FactoMineR")
+# install.packages("factoextra")
+
+library(FactoMineR)
+library(factoextra)
+```
+
+1. Penskalaan/pengoreksian data
+
+Sebelum melakukan analisis biplot, dilakukan pengoreksian data (matriks **X**) terhadap rataannya menggunakan fungsi `scale()`.
+
+```{r}
+df = scale(univs_new,scale = FALSE)
+head(df)
+```
+
+2. Pembentukan fungsi komponen utama dan grafik biplot
+
+Pembentukan fungsi komponen utama dilakukan dengan menggunakan fungsi `PCA()`
+
+```{r}
+df_pca = PCA(df, graph = F,scale.unit = F)
+```
+
+Kemudian dilakukan pembentukan grafik biplot dengan fungsi `fviz_pca_biplot()` yang membutuhkan argumen berupa fungsi komponen utama yang telah dibentuk.
+
+```{r}
+fviz_pca_biplot(df_pca,repel = T) + theme_classic()
+```
+
+Dari grafik di atas, diperoleh informasi sebagai berikut:
+
+1. **Keragaman peubah**
+    - Peubah `Expenses` dan `Accept` memiliki keragaman yang lebih besar dibandingkan peubah lainnya.
+    - Peubah `SAT` memiliki keragaman terkecil.
+2. **Keeratan hubungan antar peubah**
+    - Peubah `Grad`, `SAT` dan `Expenses` memiliki korelasi yang positif terlihat dari sudut yang terbentuk membentuk sudut < 90 derajat.
+    - Peubah `Top10` dan `SFRatio` serta `SFRatio` dan `Accept` juga memiliki korelasi yang positif terlihat sudutnya < 90 derajat. 
+    - Korelasi negatif dimiliki oleh hubungan peubah `Top10` dan `Grad` serta `Top10`, dan `Accept`.
+3. **Kemiripan antar objek** dan **Posisi relatif objek dengan peubah penciri**
+    - MIT dan Duke digambarkan dalam posisi yang berdekatan, artinya keduanya memiliki karakteristik yang mirip.
+    - Yale dicirikan dengan peubah `Expenses` yang bernilai cukup tinggi.
+    - Princeton memiliki `SFRatio` di bawah rata-rata.  
+    
+Silahkan lanjutkan dengan interpetasi yang lain.  
+
+Selanjutnya untuk mengevaluasi kebaikan dari biplot yang terbentuk, dilakukan dengan melihat persentase kumulatif keragaman yang diperoleh dari dua nilai eigen teratas (karena biplot yang terbentuk dua dimensi).
+
+Kebaikan biplot dilihat berdasarkan `cumulative.variance.percent` dari nilai eigen kedua. (Informasi keragaman yang mampu dijelaskan oleh biplot adalah sebesar 92.28%. Artinya biplot mampu memberikan informasi dari 6 peubah untuk menilai posisi relatif 7 Universitas)
+
+```{r}
+eigen_values <- get_eigenvalue(df_pca)
+eigen_values
+```
+
+Selain itu, dapat melihat presentase keragaman biplot dengan grafik plot scree dengan menggunakan `fviz_eig()` berikut.
+```{r}
+fviz_eig(df_pca, addlabels = T) + theme_classic()
+```
+
+## Studi Kasus 2
+
+Pertengahan tahun 2003 yang lalu Bank ”BR” melakukan evaluasi terhadap keuntungan yang mereka peroleh. Sebagai bank pemerintah dengan aset yang cukup besar, BR tidak memiliki keuntungan yang cukup tinggi dan bahkan cenderung mengalami penurunan keuntungan akibat menurunnya kuantitas dan kualitas nasabahnya. Managemen BR merekomendasikan pelaksanaan riset pasar terhadap persepsi masyarakat terhadap performa BR dan perbandinganya dengan performa bank-bank nasional lainnya. Dengan mengetahui posisi bank berdasarkan persepsi masyarakat ini, diharapkan dapat ditempuh langkah-langkah yang lebih baik.
+
+Riset dilakukan dalam bentuk survei untuk mengumpulkan data persepsi masyarakat terhadap beberapa bank nasional. Survei tersebut melibatkan 2300 responden yang tersebar di 8 kota (Jakarta, Surabaya, Medan, Makasar, Balikpapan, Denpasar, Solo, dan Palembang). Setiap responden diminta untuk memberikan skor terhadap atribut/karakteristik berikut:
+
+- Kualitas petugas bank dalam memberikan layanan 
+- Kualitas produk yang ditawarkan oleh bank 
+- Kualitas fasilitas kantor cabang
+- Kualitas dan kuantitas fasilitas ATM
+- Kualitas hadiah yang ditawarkan oleh bank 
+- Keamanan bertransaksi
+- Kemudahan mencapai lokasi pelayanan bank
+
+Penilaian dilakukan menggunakan skala 1, 2, ..., 10. Nilai yang semakin besar menunjukkan kecenderungan yang positif terhadap atribut yang ditanyakan.
+
+##### Menyiapkan data
+
+```{r}
+bank <- read.table(header = T, text = 
+"
+layanan;produk;cabang;ATM;hadiah;aman;lokasi
+4.31;3.89;5.67;5.89;5.12;7.11;4.12
+7.64;7.4;8.58;8.15;6.74;8.23;6.77
+8.94;7.12;8.61;6.89;7.45;8.35;7.89
+7.21;4.2;6.39;3.58;4.23;6.87;4.34
+5.74;6.34;8.22;6.31;7.05;7.65;6.89
+4.03;3.55;4.26;4.09;6.9;6.8;3.44
+6.96;3.11;4.09;3.23;3.21;6.12;2.86
+4.99;5;6.31;6.17;5.89;7.62;5.36
+",
+sep = ";")
+rownames(bank) <- c("BR", "BC", "BMD", "NI", "BN", "BDN", "BMG", "BPM")
+bank
+```
+
+##### Analisis biplot
+
+```{r}
+bank2 = scale(bank,scale = FALSE)
+bank_pca = PCA(bank2, graph = F, scale.unit=F)
+fviz_pca_biplot(bank_pca,repel = T) + theme_classic()
+```
+
+- Dari grafik di atas, diperoleh bahwa peubah `layanan` memiliki keragaman terbesar dan peubah `aman` memiliki keragaman terkecil.
+- Semakin sempit sudut yang dibuat antara dua peubah maka semakin positif tinggi korelasinya, seperti: `cabang`, `produk` dan `lokasi`; memiliki korelasi positif yang cukup tinggi.
+- Sedangkan jika sudutnya tumpul (berlawanan arah) maka korelasinya negatif, seperti: `hadiah` dan `layanan`.
+- Semakin dekat letak objek dengan arah yang ditunjuk oleh suatu peubah maka semakin tinggi nilai peubah tersebut untuk objek itu. Sedangkan jika arahnya berlawanan, maka nilainya rendah.
+- **BC** dan **BMD** merupakan bank yang memiliki tingkat `layanan`, `cabang`, `produk`, dan `lokasi` yang tinggi.
+- **BN** memiliki tingkat `keamanan`, `ATM`, dan `hadiah` yang tinggi.
+- Semakin dekat letak dua buah objek maka sifat yang ditunjukkan oleh nilai-nilai peubahnya semakin mirip.
+- **BC** dan **BMD** memiliki indikator yang hampir mirip.
+- **BMG** dan **NI** juga membentuk kelompok sendiri.
+- **BDN** dan **BR** juga membentuk kelompok sendiri berdasarkan kemiripan sifat peubah.  
+
+(Interpretasi lain dapat ditambahkan sendiri)  
+
+Kemudian dilakukan evaluasi hasil biplot yang terbentuk sebagai berikut:
+
+```{r}
+eigen_values2 <- get_eigenvalue(bank_pca)
+eigen_values2
+```
+
+```{r}
+fviz_eig(bank_pca, addlabels = T) + theme_classic()
+```
+
+Informasi keragaman yang mampu dijelaskan oleh biplot adalah sebesar 93.57%. Artinya biplot mampu memberikan informasi dari 7 peubah untuk menilai posisi relatif 8 bank berdasarkan kualitasnya.

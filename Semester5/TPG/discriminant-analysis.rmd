@@ -1,0 +1,431 @@
+# Analisis Diskriminan
+
+Dhea Dewanti & Nur Khamidah
+
+## Pengantar
+
+**Analisis diskriminan** adalah salah satu analisis statistik peubah ganda yang digunakan untuk menentukan apakah suatu individu dapat diklasifikasikan berdasarkan variabel-variabel independen tertentu ke dalam kelompok tertentu. Analisis ini dapat membantu dalam memprediksi sebuah objek baru akan termasuk dalam kelompok mana. 
+
+Jika pada analisis gerombol sekumpulan individu dikelompokkan berdasarkan kemiripannya, maka pada analisis diskriminan sebuah fungsi dibentuk untuk menentukan perbedaan antar gerombol. Sehingga jika terdapat individu baru, maka fungsi diskriminan dapat digunakan untuk mengklasifikasikan individu tersebut ke dalam kelompok yang sesuai.
+
+**Fungsi diskriminan** merupakan kombinasi linear dari variabel independen yang signifikan dalam membedakan kelompok-kelompok tersebut. Fungsi diskriminan adalah salah satu komponen kunci dalam analisis diskriminan, dan tujuannya adalah untuk menciptakan pemisahan yang optimal antara kelompok-kelompok yang berbeda berdasarkan karakteristik yang diamati.
+
+Contoh penerapan analisis diskriminan meliputi menentukan penyakit seseorang dengan melihat gejala-gejala yang dialami atau faktor penyerta yang dimiliki, memprediksi penerimaan ke program pendidikan tertentu, dan memprediksi pilihan produk perbankan nasabah berdasarkan faktor-faktor yang mempengaruhi keputusan mereka.
+
+Beberapa cara untuk menduga fungsi diskriminan:
+
+- Dengan pendekatan Fisher, jika banyak gerombol yang terbentuk hanya dua. Individu baru akan dikelompokkan ke dalam gerombol yang lebih dekat kemiripannya. 
+- Dengan menggunakan konsep jarak, di mana individu baru akan dikelompokkan ke dalam gerombol yang jarak vektor rataan populasinya lebih dekat. Biasanya konsep jarak yang digunakan adalah dengan Jarak Mahalanobis.
+- Dengan konsep peluang posterior, di mana individu baru akan diklasifikasikan ke dalam gerombol yang peluang posteriornya lebih besar.
+
+Beberapa jenis pendekatan analisis diskriminan:
+
+- **Analisis Diskriminan Linear (_Linear Discriminant Analysis / LDA_)**
+    Pendekatan ini adalah pendekatan paling umum dalam analisis diskriminan. LDA mencoba untuk memisahkan kelompok-kelompok dengan mencari fungsi linear yang maksimalkan perbedaan antara kelompok-kelompok. Pendekatan ini bergantung pada asumsi bahwa: 1) sebaran data dalam setiap kelompok adalah normal ganda, 2) memiliki matriks ragam-peragam yang sama, serta 3) biaya salah klasifikasi sama besar untuk setiap populasi. LDA menghasilkan fungsi diskriminan linear.
+
+- **Analisis Diskriminan Kuadratik (_Quadratic Discriminant Analysis / QDA_)**
+    QDA adalah variasi dari LDA yang mengizinkan matriks ragam-peragam yang berbeda untuk setiap kelompok, yang berarti fungsi diskriminan yang dihasilkan oleh QDA dapat menjadi fungsi kuadratik.
+
+- **Analisis Diskriminan Kanonik (_Canonical Discriminant Analysis / CDA_)**
+    CDA adalah sebuah teknik statistik yang digunakan dalam analisis diskriminan untuk menemukan kombinasi linear baru dari variabel prediktif yang memiliki diskriminasi maksimal antara dua atau lebih kelompok yang berbeda. CDA adalah pengembangan dari LDA yang mengizinkan lebih dari satu fungsi diskriminan.
+
+Dalam materi ini hanya dipelajari analisis diskriminan linear dan kuadratik.
+
+## Langkah-langkah Analisis Diskriminan
+
+Analisis diskriminan dilakukan dengan langkah-langkah berikut:
+
+1. Membagi data menjadi dua bagian: data latih (_train data_) dan data uji (_test data_)
+    Cara untuk membagi dapat dilakukan dengan pengambilan acak. Proporsi data latih dapat sebesar 70% atau 80% dari data asal. Misal, jika memiliki data dengan 100 amatan, maka dipilih secara acak 70 atau 80 amatan sebagai data latihnya. Tujuan dari pembagian data adalah untuk mengukur dan memastikan seberapa baik model yang dibangun dalam memprediksi data yang tidak pernah dilakukan pemodelan sebelumnya. Data latih dipakai untuk membangun model, data uji dipakai untuk menguji kemampuan model yang dibangun.
+
+2. Dengan menggunakan data latih, lakukan:
+    a. Uji normal ganda
+    b. Uji asumsi kesamaan ragam. Jika uji ini menghasilkan kesimpulan matriks ragam-peragam sama, maka digunakan _Linear Discriminant Analisis_ (LDA). Jika tidak, maka digunakan _Quadratic Discriminant Analisis_ (QDA).
+
+    | Catatan: |
+    |-------------|
+    | Menurut Mattjik dan Sumertajaya pada buku Sidik Peubah Ganda, “umumnya sangat sulit sekali untuk dapat memenuhi persyaratan (a) dan (b), yang dalam praktek sering kali tidak diuji; hal mana akan membuat akurasi dari analisis dengan fungsi diskriminan akan berkurang. Namun demikian, fungsi diskriminan selalu menghasilkan estimasi yang kokoh (_robust estimates_) terutama yang berkaitan dengan prediksi pengelompokan”. |
+
+    c. Estimasi koefisien analisis diskriminan
+    d. Evaluasi kemampuan klasifikasi analisis diskriminan
+
+3. Evaluasi kemampuan klasifikasi menggunakan data uji
+
+## _Package_ yang dibutuhkan
+
+```{r}
+# install.packages("rattle")
+# install.packages("caret")
+# install.packages("MVN")
+# install.packages("heplots")
+```
+
+```{r}
+library(rattle)
+library(caret)
+library(MVN)
+library(heplots)
+library(MASS)
+```
+
+## Studi Kasus 1
+
+Dataset _Wine_ ini berisi hasil analisis kimia anggur yang tumbuh di daerah tertentu di Italia. Tiga jenis anggur direpresentasikan dalam 178 sampel, dengan hasil dari 13 analisis kimia yang dicatat untuk setiap sampel. Peubah `Type` telah diubah menjadi peubah kategorik.
+
+#### Menyiapkan Data
+
+```{r}
+data(wine, package = "rattle")
+head(wine)
+dim(wine)
+```
+
+Diperoleh bahwa data terdiri dari 13 peubah prediktor dan 1 peubah respon sebagai berikut:
+
+| Nama peubah | Keterangan |
+|----------------|------------------|
+| `Type` | Tipe anggur, terdiri dari: 1 (59 amatan), 2 (71 amatan), dan 3 (48 amatan) |
+| `Alcohol` | Kadar alkohol |
+| `Malic` | Kadar asam malat |
+| `Ash`  | Abu |
+| `Alcalinity` | Alkalinitas abu |
+| `Magnesium` | Kadar Magnesium |
+| `Phenols` | Total fenol |
+| `Flavonoids` | Kadar fenol flavonoid |
+| `Nonflavonoids` | Kadar fenol nonflavonoid |
+| `Proanthocyanins` | Proantosianidin |
+| `Color` | Intensitas warna |
+| `Hue` | Spektrum warna |
+| `Dilution` | Dilusi anggur D280/OD315 |
+| `Proline` | Kadar prolin |
+
+Menampilkan sebagian data dan tipe peubahnya sebagai berikut:
+```{r}
+glimpse(wine)
+```
+
+#### Tahap #1 : Membagi data menjadi data latih dan data uji
+
+Pembagian data dapat dilakukan dengan menggunakan fungsi `createDataPartition()` dari pacakge `caret`. Sintaks `caret::createDataPartition()` berarti kita memanggil fungsi `createDataPartition()` dari `caret` tanpa perlu memanggil _package_ `caret` menggunakan `library(caret)`. Argumen `y` merupakan peubah respon/gerombol, `p` merupakan proporsi data latih (dalam hal ini 0.7 atau 70%), `list=FALSE` berarti hasil output dari `createDataPartition()` disimpan dalam bentuk vektor (defaultnya `list=TRUE`)
+
+```{r}
+set.seed(123)
+index_train <- caret::createDataPartition(y = wine$Type, p = 0.7, list = FALSE)
+wine_train <- wine[index_train,]
+wine_test <- wine[-index_train,]
+```
+
+`index_train` berisi vektor dari urutan/indeks amatan (1, 2, ..., dst) yang telah dilakukan pengambilan contoh secara acak.
+
+#### Tahap #2 : Pembangunan model dengan data latih
+
+Dengan menggunakan data latih yang telah diambil, dilakukan langkah berikut:
+
+1. Uji normalitas ganda
+
+    H0: Data menyebar normal ganda
+    H1: Data tidak menyebar normal ganda
+
+    Untuk menguji kenormalan ganda di R, bisa menggunakan fungsi `mvn()` dari _package_ `MVN`. Fungsi `mvn` memiliki beberapa uji normal ganda yang bisa dilakukan. Pemilihan uji normal ganda bisa dilakukan melauli argumen `mvnTest`, seperti uji Mardia (`mvnTest="mardia"`), uji Henze-Zirkler (`mvnTest="hz"`), uji Royston (`mvnTest="royston"`), uji Doornik-Hansen (`mvnTest="dh"`), dan uji _energy_ (`mvnTest="energy"`). Argumen `subset` diisi dengan kolom data yang menyatakan gerombol.
+
+    ```{r}
+    uji_normalGanda <- mvn(data = wine_train, subset="Type", mvnTest = "hz")
+    uji_normalGanda$multivariateNormality
+    ```
+
+    Karena nilai dari p-value dari `$1` dan `$3` adalah 0.1761976 dan 0.1661439, yang mana lebih besar dari nilai α (0.05) maka dapat disimpulkan bahwa tidak cukup bukti untuk menolak H0. Artinya, untuk peubah-peubah penjelas pada wine tipe 1 dan tipe 3 berdistribusi normal ganda. Sementera itu, _p-value_ dari `$2` sangat kecil yaitu 0.0003652993 yang mana lebih kecil dari nilai α (0.05). Artinya peubah-puebah penjelas pada wine tipe 2 tidak berdistribusi normal ganda.
+
+    | Catatan: |
+    |---------------|
+    | Jika salah satu uji normal ganda menyatakan Tolak H0 maka perlu dicoba uji kenormalan yang lain, karena berpotensi hasil dari uji normal ganda lainnya menghasilkan kesimpulan yang berbeda. |
+    | Walaupun ada satu gerombol yang tidak memenuhi asumsi normal ganda, analisis akan tetap dilanjutkan menggunakan analisis diskriminan karena berdasarkan Matjik dan Sumertajaya, fungsi diskriminan masih dapat menghasilkan **kemampuan klasifikasi yang baik.** |
+
+2. Uji kesamaan ragam
+
+    H0: Ragam antar populasi sama
+    H1: Ragam antar populasi tidak sama
+
+    Uji kesamaan ragam bisa dilakukan dengan menggunkan fungsi `boxM()` yang berasal dari _package_ `heplots`. Fungsi ini hanya membutuhkan 2 argumen, yaitu `data` dalam bentuk `data.frame` atau `matrix` tanpa kolom gerombol (dalam hal ini kolom **Type**) dan vektor gerombol yang diperoleh dari data (dalam hal ini kolom **Type**).
+
+    ```{r}
+    boxM(wine_train[,-1],wine_train$Type)
+    ```
+
+    Karena nilai dari _p-value_ dari uji Box’s M adalah kurang dari 2.2e-16, yang mana lebih kecil dari nilai α (0.05) maka dapat disimpulkan bahwa cukup bukti untuk menolak H0. Artinya untuk peubah-puebah penjelas pada wine memiliki **ragam yang tidak sama**. Hal ini berarti model yang lebih cocok digunakan adalah **QDA**.
+
+    Untuk ilustrasi kita akan menggunakan LDA juga karena LDA juga berpotensi mengungguli QDA dalam hal kemampuan klasifikasi berdasarkan argumen dari Matjik dan Sumertajaya.
+
+3. Estimasi koefisien analisis diskriminan
+
+    Estimasi LDA dan QDA dapat dilakukan dengan menggunakan fungsi `lda()` dan `qda()` dari package `MASS`. Argumen minimum yang dibutuhkan oleh kedua fungsi tersebut adalah `formula` dan `data`. Argumen `formula` berisi tentang rumus model yang digunakan tanpa koefisien, `Type ~ .` berarti kolom `Type` menjadi peubah respon dan `.` menandakan memakai semua kolom kecuali kolom `Type` sebagai peubah penjelas. Argumen `data` berisi tentang data yang kita gunakan.
+
+    ```{r}
+    # LDA
+    wine_lda <- lda(Type ~ ., data = wine_train)
+    coef(wine_lda)
+    ```
+
+    Karena terdapat **tiga** gerombol pada data wine maka fungsi diskriminan yang terbentuk sebanyak **dua**. Secara umum fungsi diskriminan yang terbentuk dari **g** gerombol adalah **g − 1** gerombol.
+
+    Fungsi diskriminan pertama dapat ditulis:
+
+    $$D_1 = -0.483076356 * Alcohol + 0.224630564 * Malic - 0.672781084 * Ash 
+    + 0.152999471 * Alcalinity - 0.001907630 * Magnesium + 0.705495150 * Phenols
+    - 1.735333782 * Flavonoids - 0.760204649 * Nonflavonoids + 0.092670993 * Proanthocyanins 
+    + 0.410568456 * Color - 0.089314921 * Hue - 0.882807209 * Dilution - 0.002645145 * Proline$$
+
+    Fungsi diskriminan kedua dapat ditulis:
+
+    $$D_2 = 0.854816559 * Alcohol + 0.354730236 * Malic + 2.639186194 * Ash 
+    - 0.168693427 * Alcalinity - 0.004035584 * Magnesium + 0.523268740 * Phenols
+    - 0.868717551 * Flavonoids - 1.589205566 * Nonflavonoids - 0.365830979 * Proanthocyanins
+    + 0.277565083 * Color - 1.096511470 * Hue + 0.087609503 * Dilution + 0.002808837 * Proline$$
+
+    ```{r}
+    # QDA
+    wine_qda <- qda(Type ~ ., data = wine_train)
+    coef(wine_qda)
+    ```
+
+    Berbeda dengan LDA, QDA tidak memiliki koefisien yang bisa ditampilkan.
+
+4. Evaluasi kemampuan klasifikasi analisis diskriminan
+
+    Sebelum kita mengevaluasi kedua model, maka kita akan mengekstrak prediksi gerombol yang dihasilkan oleh kedua model.
+
+    ```{r}
+    predict_lda <- predict(wine_lda)
+    predict_qda <- predict(wine_qda)
+    ```
+
+    - Menggunakan histogram (khusus LDA)
+    ```{r}
+    # fungsi diskriminan pertama
+    ldahist(predict_lda$x[,1], g = wine_train$Type)
+    # fungsi diskriminan kedua
+    ldahist(predict_lda$x[,2], g = wine_train$Type)
+    ```
+
+    Histogram fungsi diskriminan pertama, digunakan untuk melihat kemampuan fungsi diskriminan yang pertama dalam membedakan ketiga gerombol. Karena histogram kedua dan ketiga hanya beririsan di dipinggirnya saja, maka dapat dikatakan bahwa **fungsi diskriminan pertama cukup baik untuk membedakan gerombol 2 dan gerombol 3**. Sedangkan histogram pertama dan ketiga tidak beririsan sama sekali, yang berarti **fungsi diskriminan pertama memiliki kemampuan membedakan gerombol 1 dan gerombol 3 dengan sangat baik**. Di sisi lain histogram pertama dan histogram kedua relatif besar irisanya sehingga bisa dikatakan **fungsi diskriminan pertama tidak terlalu baik dalam membedakan kelompok 1 dan kelompok 2**.
+
+    Histogram fungsi diskriminan kedua memiliki interpretasi yang mirip seperti yang diatas. Berdasrkan histogram ini, **fungsi diskriminan kedua tidak mampu membedakan gerombol 1 dan gerombol 3**.
+
+    - Tabel klasfikasi dan tingkat kesalahan klasifikasi
+
+    Tabel klasifikasi bisa dimunculkan dengan menggunakan fungsi _table_, yang argumen pertamanya merupakan **gerombol asli** dan argumen keduanya merupakan **gerombol hasil prediksi**.
+
+    ```{r}
+    # LDA
+    table(wine_train$Type, predict_lda$class)
+        ```
+    ```{r}
+    # QDA
+    table(wine_train$Type, predict_qda$class)
+    ```
+
+    Baris melambangkan gerombol asli dan kolom melambangkan gerombol hasil perdiksi. Contoh membaca tabel ini adalah sebagai berikut: misalnya saja banyaknya gerombol 1 yang terprediksi sebagai gerombol 1 juga adalah 42, banyaknya gerombol 2 yang terprediksi gerombol 3 adalah 0.
+    
+    Berdasarkan kedua tabel klasifikasi ini bisa dilihat bahwa LDA dan QDA tidak memiliki kesalahan dalam memprediksi ketiga gerombol tersebut. Hal ini ditunjukkan dengan hanya diagonal tabel saja yang berisi nilai.
+    Tingkat kesalahan klasifikasi dihitung dengan menjumlahkan berapa banyak kesalahan prediksi gerombol yang dilakukan oleh model dibagi dengan banyaknya amatan data.
+
+    Menghitung tingkat kesalahan klasifikasi dengan:
+
+    ```{r}
+    #LDA
+    sum(wine_train$Type != predict_lda$class)/length(predict_lda$class)
+    ```
+    ```{r}
+    #QDA
+    sum(wine_train$Type != predict_qda$class)/length(predict_qda$class)
+    ```
+
+    Hasil tingkat kesalahan klasifikasi 0, berarti model LDA mampu memprediksi gerombol untuk semua amatan dengan benar. Pada output selanjutnya, dapat disimpulkan bahwa kemampuan klasifikasi LDA dan QDA sama walaupun menurut uji kesamaan ragam model yang lebih cocok adalah model QDA.
+
+#### Tahap #3 : Evaluasi kemampuan klasifikasi model dengan data uji
+
+Pada tahap terakhir ini akan dilakukan evaluasi kemampuan klasifikasi jika seandainya terdapat data baru yang tidak terlibat dalam proses pemodelan. Sebelum mengevaluasi kedua model, maka akan dilakukan ekstraksi prediksi gerombol yang dihasilkan oleh kedua model pada data baru ini. Argumen `newdata` disi dengan data baru (data uji).
+
+```{r}
+predict_lda_test <- predict(wine_lda, newdata = wine_test)
+predict_qda_test <- predict(wine_qda, newdata = wine_test)
+```
+
+Diperoleh tabel klasifikasi berikut:
+
+```{r}
+# LDA
+table(wine_test$Type, predict_lda_test$class)
+```
+```{r}
+# QDA
+table(wine_test$Type,predict_qda_test$class)
+```
+
+Berdasarkan tabel klasifikasi diatas, terlihat bahwa model LDA masih memiliki kesalahan prediksi gerombol. Kesahalahan prediksi ini terjadi pada gerombol 3, dimana diprediksi gerombolnya 2.
+
+Kesalahan klasifikasi dihitung dengan:
+
+```{r}
+#LDA
+sum(wine_test$Type!=predict_lda_test$class)/length(predict_lda_test$class)
+```
+
+```{r}
+#QDA
+sum(wine_test$Type!=predict_qda_test$class)/length(predict_qda_test$class)
+```
+
+Berdasarkan tingkat kesalahan klasifikasi model QDA memiliki tingkat kesalahan klasifikasi yang lebih kecil sehingga dapat dikatakan model QDA lebih baik daripada model LDA. Hal ini selaras dengan model QDA yang lebih cocok digunakan sesuai dengan uji keterpenuhan asumsi yang telah dilakukan sebelumnya.
+
+Untuk melihat amatan mana yang disalahklasifikasikan oleh LDA, dilakukan dengan melihat kelas hasil prediksi data ujinya.
+
+```{r}
+cbind(wine_test, Type_pred = predict_lda_test$class)[wine_test$Type != predict_lda_test$class,]
+```
+
+| Catatan: |
+|-----------|
+| Note Dalam praktiknya data baru yang dimaksud belum memiliki gerombol asli, sehingga tidak memungkinkan untuk dilakukan evaluasi. |
+
+## Studi Kasus 2
+
+- Sebuah Program Pascasarjana di sebuah perguruan tinggi melakukan evaluasi terhadap keberhasilan studi mahasiswa S2 di semester pertama.
+- Data menunjukkan bahwa ada tiga pengelompokan status mahasiswa yang berkaitan dengan kelanjutan studi di semester 2, yaitu Lanjut ke semester 2, Pindah ke program studi lain, dan Drop Out.
+- Banyak mahasiswa yang tidak dapat melanjutkan ke semester dua dengan lancar, diduga karena kurang seleksinya kualitas input mahasiswa.
+- Oleh karena itu, Ketua Program Studi tersebut berencana membuat kriteria seleksi untuk menyaring mahasiswa yang berkualitas.
+- Variabel yang digunakan sebagai dasar penentuan kriteria seleksi adalah IPK S1 dan skor hasil tes masuk S2. Lakukan analisis yang sesuai untuk tujuan tersebut.
+
+#### Menyiapkan Data
+
+```{r}
+data_ipk <- read.csv("https://raw.githubusercontent.com/nurkhamidah/dat/main/data-ipk.csv", sep = ";")
+head(data_ipk)
+```
+
+```{r}
+# merubah "Status" menjadi peubah kategorik
+data_ipk$Status <- as.factor(data_ipk$Status)
+glimpse(data_ipk)
+summary(data_ipk)
+```
+
+Membagi data menjadi data latih dan data uji dengan proporsi 80:20 sebagai berikut:
+
+```{r}
+set.seed(1)
+index_train <- caret::createDataPartition(y = data_ipk$Status, p = 0.8, list = FALSE)
+ipk_train <- data_ipk[index_train,]
+ipk_test <- data_ipk[-index_train,]
+```
+
+#### Membangun model dengan data latih
+
+- Uji normalitas ganda
+
+    H0 : data menyebar normal ganda 
+    H1 : data tidak menyebar normal ganda
+
+    ```{r}
+    uji_normalGanda <- mvn(data = ipk_train, subset="Status", mvnTest = "hz")
+    uji_normalGanda$multivariateNormality
+    ```
+
+    Diperoleh bahwa dari ketiga kelas (Lanjut, Drop out, dan Pindah), ketiganya menyebar normal ganda terlihat dari nilai _p-value_ yang diperoleh sudah > alfa 5%. Asumsi normalitas ganda terpenuhi.
+
+- Uji kesamaan ragam
+
+    H0 : ragam antar populasi sama 
+    H1 : ragam antar populasi tidak sama
+
+    ```{r}
+    boxM(ipk_train[,-3], ipk_train$Status)
+    ```
+    
+    Karena _p-value_ pengujian lebih kecil dari alfa 5%, maka dapat disimpulkan bahwa cukup bukti untuk menolak H0. Artinya untuk peubah-puebah penjelas pada status akademik memiliki ragam yang tidak sama sehingga metode yang lebih cocok adalah QDA. Namun karena _p-value_ mendekati 5%, maka dicoba dilakukan analisis dengan LDA dan QDA. 
+
+- Estimasi koefisien diskriminan
+
+    ```{r}
+    # LDA
+    ipk_lda <- lda(Status ~ .,data = ipk_train)
+    coef(ipk_lda)
+    ```
+
+    Diperoleh dua fungsi diskriminan berikut:
+
+    $$D_1 = -4.806460162 * IPK - 0.008604346 * Skor.tes$$
+
+    $$D_2 = -1.9347744 * IPK + 0.0140985 * Skor.tes$$
+
+    ```{r}
+    # QDA
+    ipk_qda <- qda(Status ~ .,data = ipk_train)
+    coef(ipk_qda)
+    ```
+
+- Evaluasi model LDA dengan data latih dengan histogram
+
+    ```{r}
+    predict_lda2 <- predict(ipk_lda)
+    predict_qda2 <- predict(ipk_qda)
+    ```
+
+    ```{r}
+    # fungsi pertama
+    ldahist(predict_lda2$x[,1], g = ipk_train$Status)
+    # fungsi kedua
+    ldahist(predict_lda2$x[,2], g = ipk_train$Status)
+    ```
+
+    Diperoleh dari histogram fungsi diskriminan pertama, bahwa terdapat irisan di pinggirnya pada kelompok _Drop Out_ dan _Pindah_, yang artinya fungsi diskriminan pertama **cukup baik** dalam mengklasifikasikan kelompok _Drop Out_ dan _Pindah_. Sementara, pada kelompok _Lanjut_ dan _Drop Out_, tidak terdapat irisan sama sekali pada histogramnya yang artinya fungsi diskriminan pertama **sangat baik** dalam mengklasifikasikan kelompok mahasiswa yang _Drop Out_ dan _Lanjut_. Terdapat irisan yang cukup banyak antara histogram kelompok _Lanjut_ dan _Pindah_, yang artinya fungsi diskriminan pertama **tidak cukup baik* dalam mengklasifikasikan kelompok mahasiswa yang _Lanjut_ atau _Pindah_.
+
+    Selanjutnya pada fungsi diskriminan kedua, diperoleh bahwa fungsi diskriminan kedua belum cukup baik untuk mengklasifikasikan ketiga status mahasiswa terlihat dari irisannya yang besar.
+
+- Evaluasi model LDA  & QDA dengan data latih menggunakan histogram
+
+    ```{r}
+    # LDA
+    table(ipk_train$Status, predict_lda2$class)
+    # tingkat kesalahan klasifikasi
+    sum(ipk_train$Status != predict_lda2$class)/length(predict_lda2$class)
+    ```
+
+    Berdasarkan data latih, diperoleh bahwa terdapat satu mahasiswa yang _Drop Out_ namun diklasifikasikan _Pindah_ berdasarkan model LDA, serta dua mahasiswa yang _Lanjut_ namun diklasifikasikan _Pindah_. Selain itu, tidak ada mahasiswa yang _Drop Out_ namun salah diklasifikasikan _Lanjut_ pada model diskriminan ini, karena terlihat dari fungsi diskriminan pertamanya yang sangat baik dalam mengklasifikasikan dua kelas tersebut. Selanjutnya, dari tiga mahasiswa yang salah diklasifikasikan, diperoleh bahwa tingkat kesalahan klasifikasi oleh model LDA pada data latih ini sebesar 4.35%.
+
+    ```{r}
+    # QDA
+    table(ipk_train$Status, predict_qda2$class)
+    # tingkat kesalahan klasifikasi
+    sum(ipk_train$Status != predict_qda2$class)/length(predict_qda2$class)
+    ```
+
+    Berdasarkan data latih pula, diperoleh bahwa terdapat tiga mahasiswa yang salah diklasifikasikan sehingga besaran tingkat kesalahan klasifikasinya juga sama besar. Di mana, masing-masing satu mahasiswa diklasifikasikan salah sebagai berikut: mahasiswa _Pindah_ diklasifikasikan _Lanjut_, dan sebaliknya, serta mahasiswa _Drop Out_ diklasifikasikan _Pindah_.
+
+#### Evaluasi model dengan data uji
+
+```{r}
+predict_lda_test2 <- predict(ipk_lda, newdata = ipk_test)
+predict_qda_test2 <- predict(ipk_qda, newdata = ipk_test)
+```
+
+Berdasarkan data uji, diperoleh bahwa terdapat satu mahasiswa yang _Drop Out_ namun diklasifikasikan _Pindah_ berdasarkan model LDA, serta dua mahasiswa yang _Lanjut_ namun diklasifikasikan _Pindah_. Selain itu, tidak ada mahasiswa yang _Drop Out_ namun salah diklasifikasikan _Lanjut_ pada model diskriminan ini, karena terlihat dari fungsi diskriminan pertamanya yang sangat baik dalam mengklasifikasikan dua kelas tersebut. Selanjutnya, dari tiga mahasiswa yang salah diklasifikasikan, diperoleh bahwa tingkat kesalahan klasifikasi oleh model LDA pada data uji ini sebesar 18.75%.
+
+Sedangkan berdasarkan data uji pula, diperoleh tidak ada yang salah diklasifikasikan dengan model QDA. Terlihat bahwa model QDA lebih baik dalam memprediksi kelas/status akademik mahasiswa.
+
+Untuk melihat amatan yang salah diprediksi, dilakukan dengan code sebagai berikut:
+
+```{r}
+# LDA
+table(ipk_test$Status, predict_lda_test2$class)
+# tingkat kesalahan klasifikasi
+sum(ipk_test$Status != predict_lda_test2$class)/length(predict_lda_test2$class)
+# melihat amatan yang salah diklasifikasikan
+cbind(ipk_test, Status_pred = predict_lda_test2$class)[ipk_test$Status != predict_lda_test2$class,]
+```
+
+```{r}
+# QDA
+table(ipk_test$Status, predict_qda_test2$class)
+# tingkat kesalahan klasifikasi
+sum(ipk_test$Status != predict_qda_test2$class)/length(predict_qda_test2$class)
+```

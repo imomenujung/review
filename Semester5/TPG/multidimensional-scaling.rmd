@@ -1,0 +1,173 @@
+# Multidimensional Scaling
+
+Dhea Dewanti & Nur Khamidah
+
+### Pengantar
+
+Multidimensional Scaling (MDS) adalah teknik yang digunakan untuk mengurangi dimensi data sambil mempertahankan jarak berpasangan antara pengamatan. Metode ini umumnya digunakan di bidang-bidang seperti psikologi, sosiologi, dan riset pemasaran untuk membuat representasi visual dari kumpulan data yang kompleks. Tujuan dari multidimensional scaling secara umum adalah untuk menyajikan sebuah peta yang dapat memberikan informasi mengenai hubungan antar sejumlah amatan dengan mempertahankan jarak berpasangan antara pengamatan. Pada bidang tertentu, input datanya adalah dalam bentuk matriks _similarity_ atau _dissimilarity_ atau matriks jarak antar individu. Dalam hal ini tujuannya adalah untuk membuat peta posisi relatif antar individu.
+
+Metode multidimensional scaling dibagi dalam dua tipe yaitu _metric/classical multidimensional scaling_ (MMDS) dan _nonmetric multidimensional
+scaling_ (NMMDS). MMDS diterapkan pada data yang diasumsikan bersifat kuantitatif berskala interval atau rasio, sedangkan tipe NMMDS diterapkan pada data yang diasumsikan bersifat kualitatif berskala nominal atau ordinal (Dillon dan Goldstein, 1984).
+
+### Perbedaan MDS dengan PCA
+
+Sebelumnya kita telah belajar mengenai metode pereduksian dengan analisis komponen utama, berikut perbedaan antara keduanya:
+
+| Kategori  | MDS   | PCA   |
+| --------------- | ----------------- | ----------------- |
+| Tujuan | Untuk memvisualisasikan kesamaan atau ketidaksamaan antara pengamatan dalam ruang data berdimensi tinggi. | Untuk mengurangi dimensi data sambil mempertahankan informasi sebanyak mungkin.|
+| Metode | MDS menemukan representasi data berdimensi rendah berdasarkan matriks kesamaan atau ketidaksamaan. | PCA menemukan sistem koordinat baru yang menjelaskan varians maksimum dalam data. |
+| Input | Matriks kesamaan/ketidaksamaan atau matriks kedekatan. | Matriks data. |
+| Output | Scatter plot dimensi rendah. | Komponen utama (vektor ciri) dan besaran variansi yang dijelaskan. |
+| Fitur yang dipertahankan | Hubungan jarak antar amatan. | Variansi/keragaman maksimum dari data. |
+| Kelebihan | Bagus untuk memvisualisasikan hubungan kompleks antara pengamatan. | Bagus untuk menghilangkan kebisingan dan meningkatkan interpretasi data. |
+
+Singkatnya, MDS baik untuk memvisualisasikan kesamaan atau ketidaksamaan antara pengamatan dalam ruang data berdimensi tinggi, sementara PCA baik untuk mengurangi dimensi data dan meningkatkan interpretasi data.
+
+### Metode MDS
+
+1. **Metric / Classical Multidimensional Scaling**
+
+    - Skala yang digunakan dalam multidimensional scaling metrik adalah skala data interval dan skala data rasio.
+    - Dalam prosedur multidimensional scaling metrik hanya menyusun bentuk geometri dari titik-titik objek yang diupayakan sedekat mungkin dengan input jarak yang diberikan.
+    - Pada dasarnya, MDS metrik adalah mengubah input jarak kedalam bentuk geometrik sebagai outputnya.
+    - Perhitungan jarak dapat dilakukan menggunakan jarak euclid.
+
+2. **Nonmetric Multidimensional Scaling**
+
+    - Multidimesional scaling nonmetrik mengasumsikan bahwa datanya adalah kualitatif (nominal dan ordinal)
+    - Mengasumsikan bahwa hanya peringkat jarak antar data yang diketahui
+    - Teknik ini lebih fleksibel dan robust dibandingkan MDS Metrik karena dapat digunakan dengan data yang mungkin tidak memenuhi asumsi-asumsi ketat yang diperlukan oleh MDS. 
+    - Dapat digunakan untuk memvisualisasikan hubungan antar objek yang tidak mudah dilihat pada data aslinya.
+
+### Studi Kasus 1
+
+Diberikan suatu data yang mencantumkan jarak terbang antar sepuluh kota di Amerika Serikat, seperti yang terlihat dalam data berikut.
+
+Data ini dapat dengan mudah dibuat dari peta Amerika Serikat dengan menggunakan penggaris untuk mengukur jarak antar kota-kota tersebut.
+Namun, terdapat situasi di mana seseorang diberikan hanya data jarak antar kota tersebut dan kemudian diminta untuk membuat peta berdasarkan jarak-jarak ini. Membuat peta berdasarkan data jarak ini merupakan masalah yang lebih sulit. Peta yang akurat harus memperhitungkan hubungan spasial yang sebenarnya antara kota-kota tersebut.
+
+Multidimensional Scaling (MDS) diharapkan dapat menangani masalah ini. MDS adalah teknik analisis multivariat yang bertujuan untuk mereduksi dimensi dari data dengan tetap mempertahankan hubungan atau jarak antar objek.
+
+1. **Menyiapkan data**
+
+Karena data berskala kuantitatif, maka dalam kasus ini dilakukan penskalaan dengan MMDS.
+
+```{r}
+airline_data <- matrix(ncol=10,nrow=10)
+
+colnames(airline_data) <- c("Atlanta","Chicago","Denver","Houston","Los_Angeles","Miami","New_York","San_Francisco","Seattle","Washington_D.C")
+
+rownames(airline_data) <- c("Atlanta","Chicago","Denver","Houston","Los_Angeles","Miami","New_York","San_Francisco","Seattle","Washington_D.C")
+
+airline_data[lower.tri(airline_data)] <- c(587,1212,701,1936,604,748,2139,2182,543,920,940,1745,1188,713,1858,1737,597,879,831,1726,1631,949,1021,1494,1374,968,1420,1645,1891,1220,2339,2451,347,959,2300,1092,2594,2734,923,2571,2408,205,678,2442,2329)
+
+diag(airline_data) <- 0
+airline_data <- as.dist(airline_data, diag = TRUE) # membuat data matriks menjadi kelas dist
+class(airline_data)
+airline_data
+```
+
+2. **Menghitung koordinat MMDS**
+
+Untuk membentuk koordinat MMDS dengan fungsi `cmdscale()`. Fungsi ini memiliki beberapa argumen:
+
+1. `d` : objek data berformat _dist_ (matriks jarak/distance)
+2. `k` : maksimum dimensi di mana data akan direpresentasikan, bernilai antara 1 sampai p-1 untuk data berdimensi p
+3. `eig` : argumen bertipe boolean untuk menentukan apakah nilai ciri akan dikembalikan
+
+```{r}
+mmds_coord <- cmdscale(airline_data, k = 2, eig = T)
+coords <- mmds_coord$points
+coords
+```
+
+3. **Membentuk plot MMDS**
+
+```{r}
+plot(coords[,1], coords[,2], type = "n", xlab = "", ylab = "", axes = FALSE,
+     main = "US Airline Map - MMDS")
+text(coords[,1], coords[,2], labels(airline_data), cex = 0.9, xpd = TRUE)
+```
+
+Grafik hasil menunjukkan bahwa Washington dan New York adalah kota yang berdekatan. Kedua, kita dapat melihat bahwa Los Angeles dan San Francisco berdekatan satu sama lain. Di sisi lain, Miami dan Seattle adalah kota yang paling jauh satu sama lain. Juga, San Francisco terletak jauh dari Miami, New York, dan Washington.
+
+4. **Evaluasi kebaikan MMDS**
+
+```{r}
+#install.packages("seqhandbook")
+library(seqhandbook)
+stress <- seqmds.stress(airline_data, mmds_coord)
+stress
+plot(stress, type='l', xlab='number of dimensions', ylab='stress')
+```
+
+Diperoleh bahwa dengan memetakan ke dalam 2 dimensi, diperoleh nilai stress sebesar 0.00327 (mendekati nol), artinya penskalaan ini sudah baik.
+
+### Studi Kasus 2
+
+Matriks data yang digunakan dalam analisis ini mewakili jumlah perbedaan yang ada di antara para politisi Perang Dunia II.
+
+1. **Menyiapkan data**
+
+```{r}
+ww_data <- matrix(ncol=12,nrow=12)
+
+colnames(ww_data) <- c("Hitler","Mussolini","Churchill","Eisenhower","Stalin","Attlee","Franco","De_Gaulle","Mao_Tse","Truman","Chamberlain","Tiro")
+
+rownames(ww_data) <- c("Hitler","Mussolini","Churchill","Eisenhower","Stalin","Attlee","Franco","De_Gaulle","Mao_Tse","Truman","Chamberlain","Tiro")
+
+ww_data[lower.tri(ww_data)] <- c(5,11,15,8,17,5,10,16,17,12,16,14,16,13,18,3,11,18,18,14,17,7,11,11,12,5,16,8,10,8,16,16,14,8,17,6,7,12,15,13,11,12,14,16,12,16,12,16,12,9,13,9,17,16,10,12,13,9,11,7,12,17,10,9,11,15)
+
+diag(ww_data) <- 0
+
+class(ww_data)
+ww_data
+```
+
+Karena data merupakan data kategorik, maka penskalaan dilakukan dengan metode NMMDS. Selanjutnya data diubah menjadi matriks jarak:
+
+```{r}
+ww_data <- as.dist(ww_data, diag = TRUE)
+```
+
+2. **Membentuk koordinat NMMDS**
+
+NMMDS dilakukan menggunakan fungsi `isoMDS()` dari package `MASS` yang membutuhkan beberapa argumen:
+
+- `d` : objek matriks jarak
+- `k` : banyak dimensi yang diinginkan, defaultnya 2
+- `tol` : batas toleransi iterasi sampai konvergen, secara default $10^{-3}$
+- `maxit` : banyak iterasi maksimum, secara default 50
+
+```{r}
+library(MASS)
+coord_nmmds = isoMDS(ww_data, k = 2)
+```
+
+3. **Membentuk plot NMMDS**
+
+```{r}
+plot(coord_nmmds$points, type = "n", xlab = "", ylab = "", axes = FALSE,)
+text(coord_nmmds$points, labels(ww_data), cex = 0.9, xpd = TRUE)
+```
+
+Berdasarkan plot di atas kita dapat melihat bahwa “Franco” dan “Mussolini” memiliki kemiripan yang paling banyak dibandingkan dengan yang lain. Jelas bahwa “Hitler” dan “Mussolini” memiliki kesamaan tertinggi kedua. Selanjutnya kita dapat menemukan adanya kesamaan antara “De Gaulle” dan “Churchill”. Sebaliknya “Mussolini” dan “Attlee” memiliki jumlah ketidaksamaan tertinggi berdasarkan plot di atas.
+
+4. **Menghitung nilai STRESS**
+
+```{r}
+stress2 <- seqmds.stress(ww_data, coord_nmmds)
+stress2
+plot(stress2, type='l', xlab='number of dimensions', ylab='stress')
+```
+
+Diperoleh dengan pemetaan dua dimensi, nilai stress yang didapatkan sebesar 0.218188.
+
+```{r}
+# install.packages("vegan")
+library(vegan)
+stressplot(coord_nmmds, ww_data)
+```
+
+Plot Shepard di atas adalah scatter plot dari jarak antar titik (ada $\frac{n(n-1)}{2}$) vs. ketidaksamaan pada amatan. Yang diharapkan adalah terdapat linieritas antara meningkatnya nilai jarak dengan _dissimilarity_, dan berdasarkan plot di atas diperoleh bahwa terdapat hubungan linier antar keduanya, artinya pemetaan yang dihasilkan sudah baik.

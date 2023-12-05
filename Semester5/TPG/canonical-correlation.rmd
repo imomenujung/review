@@ -1,0 +1,389 @@
+# Analisis Korelasi Kanonik 
+
+Dhea Dewanti & Nur Khamidah
+
+## Pengantar
+
+Analisis korelasi kanonik adalah suatu metode analisis peubah ganda untuk mengetahui keeratan hubungan dua **gugus** peubah, di mana masing-masing gugus terdiri dari beberapa peubah. Misalkan, gugus peubah pertama terdiri dari _p_ peubah yang terdapat pada vektor **X** berukuran p x 1, dan gugus kedua terdiri dari _q_ peubah yang disimpan pada vektor **Y** berukuran q x 1. Kemudian, dibuat kombinasi linier antara kedua gugus peubah dengan vektor **a** dan **b** menjadi **U = a'X** dan **V = b'Y**. Dengan ini, korelasi kanonik digunakan untuk mengetahui keeratan hubungan antara U dan V.
+
+Menurut Tabachnick (1989), sebelum melakukan analisis korelasi kanonik dianjurkan untuk melakukan beberapa pengecekan berikut:
+
+1. **Missing values** : Sebelum melakukan analisis korelasi kanonik, penting untuk memeriksa keberadaan amatan hilang. Jika amatah hilang muncul di salah satu atau beberapa peubah, maka amatan tersebut dapat dihilangkan.
+2. **Normalitas ganda dan pencilan** : Pencilan dapat menimbulkan masalah ketika melakukan analisis korelasi kanonik. Pencilan dapat diperiksa melalui beberapa pengujian dan plot univariat. Selain itu, analisis korelasi kanonik memerlukan terpenuhinya asumsi normalitas ganda.
+3. **Linearitas** : Analisis korelasi kanonik mengasumsikan hubungan linier antar peubah, sehingga perlu diperiksa kelinierannya menggunakan _paired scatter plot_ atau metode lain untuk meningkatkan efektivitas analisis.
+4. **Multikolinearitas dan singularitas** : Multikolinearitas terjadi ketika satu peubah memiliki nilai yang hampir setimbang dengan peubah lainnya, sementara singularitas terjadi ketika hubungan kesetimbangan tersebut exact. Karena invers matriks diperlukan pada proses analisis ini, perlu untuk memeriksa multikolinearitas dan singularitas. Jika asumsi ini tidak terpenuhi, atasi dengan membuang peubah penyebab multikolinearitas dan singularitas.
+
+## Langkah-Langkah
+
+Analisis korelasi kanonik dilakukan dengan tahapan sebagai berikut:
+
+1. Melakukan eksplorasi data dan uji asumsi analisis korelasi kanonik
+2. Menentukan fungsi kanonik dan ukuran kesesuaiannya
+3. Menginterpretasikan hasil analisis korelasi kanonik
+4. Melakukan validasi hasil analisis korelasi kanonik
+
+## Studi Kasus - 1
+
+- Suatu survey terhadap 50 orang dilakukan untuk mengetahui apa faktor yang berhubungan dengan _sales performance_.
+- Peubah yang di ukur adalah _**Sales Performance (X)**_ yang terdiri atas **_Sales Growth_ (X1)**, **_Sales Profitability_ (X2)**, dan **_New Account Sales_ (X3)** serta **_Intelligence Test Score_ (Y)** yang terdiri atas **_Creativity_ (Y1)**, **_Mechanical Reasoning_ (Y2)**, **_Abstract Reasoning_ (Y3)**, dan **_Mathematics_ (Y4)**.
+- Lakukan analisis dari data berikut menggunakan korelasi kanonik menggunakan R atau software lain yang sesuai.
+
+```{r setup, include=FALSE} 
+knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
+```
+
+```{r}
+data_sales <- read.csv("https://online.stat.psu.edu/stat505/sites/stat505/files/lesson13/sales.csv", sep = ",")
+library(knitr)
+kable(head(data_sales))
+```
+
+Pisahkan masing-masing peubah berdasarkan gugusnya.
+
+```{r}
+sales_X <- data_sales[,1:3]
+sales_Y <- data_sales[,4:7]
+```
+
+#### Uji asumsi data
+
+```{r}
+# install.packages("GGally")
+library(GGally)
+ggpairs(sales_X)
+```
+
+Berdasarkan plot berpasangan, terlihat bahwa terjadi multikolinearitas antar peubah X. Namun, karena berdasarkan koefisien korelasi yang dihasilkan diperoleh multikolinearitas yang tidak sempurna (|korelasi| < 1), maka dalam contoh ini kita lanjutkan saja dan diabaikan dulu.
+
+```{r}
+ggpairs(sales_Y)
+```
+
+Berdasarkan plot di atas, diperoleh bahwa tidak terjadi multikolinearitas antar peubah Y.
+
+```{r}
+ggpairs(data_sales)
+```
+
+Uji normalitas ganda dilakukan dengan:
+
+```{r}
+# install.packages("RVAideMemoire")
+library(RVAideMemoire)
+mqqnorm(sales_X, main = "Multi-normal Q-Q Plot X")
+```
+
+Berdasarkan QQ-plot normalitas ganda peubah X, diperoleh titik-titik menyebar di sekitar garis diagonal sehingga disimpulkan bahwa gugus peubah X menyebar secara normal ganda.
+
+```{r}
+mqqnorm(sales_Y, main = "Multi-normal Q-Q Plot Y")
+```
+
+Berdasarkan QQ-plot normalitas ganda peubah Y, terdapat titik-titik yang tidak menyebar di sekitar garis diagonal sehingga disimpulkan bahwa gugus peubah Y belum menyebar secara normal ganda.
+
+```{r}
+mqqnorm(cbind(sales_X, sales_Y), main = "Multi-normal Q-Q Plot X dan Y")
+```
+Berdasarkan QQ-plot normalitas ganda peubah X dan Y, diperoleh bahwa titik-titik menyebar di sekitar garis diagonal sehingga disimpulkan bahwa gugus peubah X dan Y secara bersama-sama sudah menyebar secara normal ganda.  
+#### Korelasi antar peubah
+
+Periksa korelasi antar **X** dan **Y** :
+
+```{r}
+# install.packages("CCA")
+library(CCA)
+correls_XY <- matcor(sales_X, sales_Y)
+```
+
+Korelasi antar **X** :
+
+```{r}
+kable(correls_XY$Xcor)
+
+library(corrplot)
+corrplot(correls_XY$Xcor, method = "color", addCoef.col ='white', is.cor = T, type = "lower", diag = F)
+```
+
+- Besarnya korelasi antara X1 dan X2, X1 dan X3, serta X2 dan X3 secara berurutan adalah 0.9261, 0.8840, dan 0.8425.
+- Hasil ini menunjukkan bahwa ada hubungan linear yang erat antar anggota dalam gugus peubah Sales Performance (X) karena mendekati 1 dan arahnya positif.
+
+Korelasi antar **Y** :
+
+```{r}
+kable(correls_XY$Ycor)
+corrplot(correls_XY$Ycor, method = "color", addCoef.col ='black', is.cor = T, type = "lower", diag = F)
+```
+
+- Korelasi antar anggota dalam gugus peubah Y cenderung lebih kecil dibandingkan besaran korelasi anggota dalam gugus peubah X.
+- Semua nilai korelasi nya kurang dari 0.6.
+- Korelasi tertinggi dimiliki hubungan peubah Creativity (Y1) dan Mechanical Reasoning (Y2) sebesar 0.59 dan terendah sebesar 0.1469 yang merupakan hubungan antar Creativity (Y1) dan Abstract Reasoning (Y3).
+
+Korelasi antar X dan Y :
+
+```{r}
+kable(correls_XY$XYcor)
+corrplot(correls_XY$XYcor, method = "color", addCoef.col ='white', is.cor = T, type = "lower", diag = F)
+```
+
+- Hasil di atas memperlihatkan bahwa Sales Growth (X1), Sales Profitability (X2) dan New Acount Sales (X3) memiliki hubungan linear yang sangat kuat dengan mathematics (Y4).
+- Hubungan yang cukup kuat juga terlihat pada hubungan peubah X (X1,X2,X3) dengan mechanical reasoning (Y2).
+- Sedangkan tingkat hubungan linear antar peubah X dengan creativity (Y1) dan abstract reasoning (Y3) relatif rendah.
+
+```{r}
+img.matcor(correls_XY, type = 2)
+```
+
+#### Korelasi kanonik
+
+```{r}
+# install.packages("candisc")
+library(candisc)
+cca1 <- cancor(sales_X, sales_Y)
+summary(cca1)
+```
+
+atau dapat ditemukan dengan menggunakan _package_ `CCA`:
+
+```{r}
+library(CCA)
+cc1 <- cc(sales_X, sales_Y)
+cc1$cor
+```
+
+- Korelasi kanonik pertama (korelasi antara pasangan pertama dari kanonik) adalah sebesar 0.994483.
+- Nilai ini merepresentasikan korelasi tertinggi yang mungkin terjadi antara beberapa kombinasi linear dari _sales performance_ dan beberapa kombinasi linear dari _Intelligence Test Score_.
+- Proporsi keragaman menunjukkan baik tidaknya peubah kanonik yang dipilih untuk menerangkan keragaman asal.
+- Semakin besar nilai proporsi keragaman maka semakin baik peubah-peubah kanonik yang dipilih menerangkan keragaman asal. Proporsi keragaman untuk memilih jumlah peubah kanonik yang tepat digunakan untuk menjelaskan hubungan antara gugus peubah dependen dengan independen.
+- Berdasarkan kontribusi keragaman yang dijelaskan oleh fungsi kanonik terlihat fungsi kanonik pertama menjelaskan kergaman total sebesar 96.21%, sedangkan yang kedua 3,61%, dan ketiga 0,18%.
+- Berdasarkan proprosi keragaman diatas, dengan menggunakan kriteria batasan minimal memiliki kontribusi keragaman 70% (Mattjik dan Sumertajaya 2011), maka cukup mengambil fungsi kanonik yang pertama saja.
+- Korelasi kanonik yang pertama dan kedua berbeda nyata dengan nol pada taraf nyata 1% (Pr < α, dengan α = 0.01).
+- Sedangkan korelasi kanonik yang ketiga tidak berbeda nyata dengan nol pada taraf nyata 1%.
+- Hal ini berarti korelasi kanonik yang dapat digunakan untuk menjelaskan hubungan antar gugus peubah _Sales Performance_ dengan _Intelligence Test Score_ adalah dua korelasi kanonik yang pertama.
+
+#### Koefisien korelasi kanonik mentah
+
+Koefisien kanonik _raw_ / mentah untuk peubah _sales performance_:
+
+```{r}
+cc1[3:4]
+```
+
+Interpretasi koefisien di atas mirip dengan interpretasi koefisien regresi, di mana:
+
+- Peningkatan nilai Sales Growth (X1) akan menurunkan variansi kanonik pertama dari gugus peubah _sales performance_ sebesar 0.0624 dengan peubah lainnya dianggap konstan.
+- Peningkatan nilai Profitability (X2) akan menurunkan variansi kanonik pertama dari gugus peubah _sales performance_ sebesar 0.0209 dengan peubah lainnya dianggap konstan.
+- dan seterusnya.
+
+#### Menghitung _loading kanonik_
+
+Fungsi `comput()` digunakan untuk menghitung loading kanonik, yang digunakan untuk menampilkan korelasi peubah dengan fungsi kanonik sebagai berikut:
+
+```{r}
+cc1_comp <- comput(sales_X, sales_Y, cc1)
+```
+
+- Korelasi X dengan fungsi kanonik X:
+
+```{r}
+cc1_comp$corr.X.xscores
+corrplot(cc1_comp$corr.X.xscores, method = "color", addCoef.col ='white', is.cor = T)
+```
+
+Diperoleh bahwa untuk fungsi kanonik peubah _sales performance_ peubah-peubah yang berhubungan paling erat dengan fungsi kanonik pertama adalah Sales Growth (X1), sedangkan terhadap fungsi kanonik kedua yaitu Sales Profitability (X2).
+
+- Korelasi Y dengan fungsi kanonik Y:
+
+```{r}
+cc1_comp$corr.Y.yscores
+corrplot(cc1_comp$corr.Y.yscores, method = "color", addCoef.col ='white', is.cor = T)
+```
+
+Untuk fungsi kanonik peubah _Intelligence Test Score_ terlihat bahwa peubah-peubah yang berhubungan paling erat dengan fungsi kanonik pertama yaitu Mathematic (Y4) kemudian Mechanical Reasoning (Y2), sedangkan terhadap fungsi kanonik kedua yaitu Abstract Reasoning (Y3).
+
+- Korelasi silang X dengan fungsi kanonik Y:
+
+```{r}
+cc1_comp$corr.X.yscores
+corrplot(cc1_comp$corr.X.yscores, method = "color", addCoef.col ='white', is.cor = T)
+```
+
+Korelasi silang antar peubah-peubah dependen terhadap fungsi kanonik peubah independen memberikah hasil bahwa yang berhubungan paling erat dengan fungsi kanonik pertama adalah Sales Growth (X1), dan dengan fungsi kanonik kedua adalah Sales Profitability (X2).
+
+- Korelasi silang Y dengan fungsi kanonik X:
+
+```{r}
+cc1_comp$corr.Y.xscores
+corrplot(cc1_comp$corr.Y.xscores, method = "color", addCoef.col ='white', is.cor = T)
+```
+
+Sedangkan korelasi silang antar peubah-peubah independen terhadap fungsi kanonik peubah dependen memberikah hasil bahwa yang berhubungan paling erat dengan fungsi kanonik pertama adalah Mathematic (Y4), dan dengan fungsi kanonik kedua adalah Abstract Reasoning (Y3).
+
+#### Uji signifikansi korelasi kanonik
+
+```{r}
+rho <- cc1$cor
+n <- dim(sales_X)[1]
+p <- length(sales_X)
+q <- length(sales_Y)
+```
+
+```{r}
+# install.packages("CCP")
+library(CCP)
+p.asym(rho, n, p, q, tstat = "Wilks")
+p.asym(rho, n, p, q, tstat = "Hotelling")
+p.asym(rho, n, p, q, tstat = "Pillai")
+p.asym(rho, n, p, q, tstat = "Roy")
+```
+
+Secara umum, banyak fungsi/dimensi kanonik sama dengan jumlah peubah dalam himpunan yang lebih kecil, namun banyak dimensi yang signifikan mungkin lebih kecil lagi. Dimensi kanonik, juga dikenal sebagai fungsi kanonik, adalah peubah laten yang mirip dengan faktor-faktor yang diperoleh dalam analisis faktor. Untuk model khusus ini terdapat tiga dimensi kanonik.
+
+Dari hasil di atas diperoleh bahwa keempat pengujian menunjukkan bahwa pada fungsi/dimensi kanonik pertama, semuanya signifikan pada taraf nyata 5%. Artinya, minimal ada satu korelasi kanonik yang nyata. Selanjutnya dilanjutkan dengan uji parsial.
+
+```{r}
+cca1
+```
+
+Berdasarkan LR test, diperoleh bahwa korelasi kanonik yang pertama dan kedua berbeda nyata dengan nol pada taraf nyata 1% (Pr < α, dengan α=0.01).
+Sedangkan korelasi kanonik yang ketiga tidak berbeda nyata dengan nol pada taraf nyata 1%.
+Hal ini berarti korelasi kanonik yang dapat digunakan untuk menjelaskan hubungan antar gugus peubah _Sales Performance_ dengan _Intelligence Test Score_ adalah dua korelasi kanonik yang pertama.
+
+#### Menghitung koefisien korelasi kanonik terstandardisasi
+
+```{r}
+coef_X <- diag(sqrt(diag(cov(sales_X))))
+coef_X %*% cc1$xcoef
+```
+
+- Koefisien kanonik untuk fungsi kanonik dependen (_sales performance_) menunjukkan bahwa urutan kontribusi relatif peubah-peubah _sales performance_ (X) terhadap variate/fungsi kanonik pertama adalah Sales Growth (X1), New Account Sales (X3), dan Sales Profitability (X2);
+- Urutan kontribusi relatif peubah-peubah X terhadap variate kedua adalah Sales Profitability (X2), Sales Growth (X1), dan New Account Sales (X3).
+
+```{r}
+coef_Y <- diag(sqrt(diag(cov(sales_Y))))
+coef_Y %*% cc1$ycoef
+```
+
+- Urutan kontribusi relatif peubah-peubah _Intelligence Test Score_ (Y) terhadap variate pertama adalah Mathematic (Y4), Creativity (Y1), Abstract Reasoning (Y3), dan Mechanical Reasoning (Y2);
+- Urutan kontribusi relatif peubah-peubah Y terhadap variate kedua adalah Abstract Reasoning (Y3), Creativity (Y1), Mathematic (Y4), dan Mechanical Reasoning (Y2).
+
+#### Peubah Kanonik
+
+Diperoleh beberapa fungsi kanonik berikut:
+
+$U_1 = -0.4577 X_1 - 0.2119 X_2 - 0.3679 X_3$  
+$U_2 = -1.2772 X_1 + 2.4517 X_2 - 1.229 X_3$
+
+$V_1 = -0.2755 Y_1 - 0.1040 Y_2 - 0.1916 Y_3 - 0.6621 Y_4$  
+$V_2 = -0.7600 Y_1 + 0.6823 Y_2 - 1.0607 Y_3 + 0.7199 Y_4$
+
+
+## Studi Kasus - 2
+
+Seorang peneliti ingin melakukan suatu eksperimen yang melibatkan suatu reaksi kimia
+dengan 3 peubah independen dan 3 peubah dependen (Box dan Youle, 1955; Rencher, 2002).
+Peubah-peubah tersebut adalah sebagai berikut :  
+X1 : temperature  
+X2 : concentration  
+X3 : time  
+Y1 : percentage of unchanged starting material  
+Y2 : percentage converted to the desired product  
+Y3 : percentage of unwanted by-product  
+
+Lakukan analisis korelasi kanonik terhadap data berikut:  
+
+#### Import data
+
+```{r}
+# install.packages("ACSWR")
+library(ACSWR)
+data(chemicaldata)
+kable(head(chemicaldata))
+```
+
+```{r}
+X <- chemicaldata[,4:6]
+Y <- chemicaldata[,1:3]
+```
+
+#### Periksa asumsi
+
+```{r}
+ggpairs(X)
+```
+
+```{r}
+ggpairs(Y)
+```
+
+Sebagaimana plot yang diperoleh, pada gugus peubah Y terdapat peubah Y1 dan Y3 yang berkorelasi kuat dan berpotensi menyebabkan multikolinearitas.
+
+```{r}
+correl <- matcor(X, Y)
+```
+
+Berikut merupakan ilai korelasi pearson antar peubah X, antar peubah Y, dan korelasi silang antara peubah X dengan peubah Y.
+
+```{r}
+corrplot(correl$Xcor, method = "color", addCoef.col ='black', is.cor = T, type = "lower", diag = F)
+```
+
+```{r}
+corrplot(correl$Ycor, method = "color", addCoef.col ='white', is.cor = T, type = "lower", diag = F)
+```
+
+```{r}
+corrplot(correl$XYcor, method = "color", addCoef.col ='black', is.cor = T, type = "lower", diag = F)
+```
+
+#### Korelasi Kanonik
+
+```{r}
+cca2 <- candisc::cancor(X,Y)
+summary(cca2)
+```
+
+Kontribusi korelasi kanonik terbesar ditunjukkan pada fungsi kanonik pertama. Artinya untuk menerangkan keragaman total cukup mengambil fungsi kanonik pertama saja.
+
+Uji hipotesis menunjukkan bahwa korelasi kanonik pertama berbeda nyata. Artinya korelasi kanonik yang dapat digunakan untuk menjelaskan hubungan antar gugus peubah X dan Y adalah satu korelasi kanonik.
+
+```{r}
+coef_X <- diag(sqrt(diag(cov(X))))
+coef_X %*% cca2$coef$X
+```
+
+```{r}
+coef_Y <- diag(sqrt(diag(cov(Y))))
+coef_Y %*% cca2$coef$Y
+```
+
+Diperoleh fungsi kanonik berikut:
+
+$U = -0.9988 X_1 - 0.6296 X_2 - 0.3522 X_3$  
+$V = 1.7019 Y_1 + 0.3259 Y_2 + 0.5775 Y_3$
+
+#### Korelasi dengan fungsi kanonik
+
+###### Korelasi X dan fungsi kanonik X (U):
+
+```{r}
+corrplot(cca2$structure$X.xscores, method = "color", addCoef.col ='black', is.cor = T, diag = F)
+```
+
+
+###### Korelasi Y dan fungsi kanonik Y (V):
+
+```{r}
+corrplot(cca2$structure$Y.yscores, method = "color", addCoef.col ='black', is.cor = T, diag = F)
+```
+
+###### Korelasi X dan V :
+
+```{r}
+corrplot(cca2$structure$X.yscores, method = "color", addCoef.col ='black', is.cor = T, diag = F)
+```
+
+###### Korelasi Y dan U:
+
+```{r}
+corrplot(cca2$structure$Y.xscores, method = "color", addCoef.col ='black', is.cor = T, diag = F)
+```

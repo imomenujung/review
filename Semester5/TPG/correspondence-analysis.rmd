@@ -1,0 +1,459 @@
+# Analisis Korespondensi / _Correspondence Analysis_
+
+Dhea Dewanti & Nur Khamidah
+
+## Pengantar
+
+Analisis korespondensi diawali dengan tulisan Hartley pada tahun 1935. Selanjutnya pengembangan analisis ini dilakukan oleh beberapa pakar, baik secara bersama-sama maupun secara terpisah dengan pendekatan dan bidang-bidang terapan yang berlainan. Pendekatan secara geometrik mula-mula dilakukan di Prancis dengan tokohnya antara lain Benzecri (Greenacre, 1984 dalam Damayanti, 1992). Sejalan dengan ini Johnson (2007) mengatakan analisis korespondensi dikembangkan oleh tokoh-tokoh Perancis yang merupakan prosedur grafis untuk mewakili asosiasi dalam tabel frekuensi atau jumlah. Tabel frekuensi yang akan dibahas adalah tabel frekuensi dua arah atau yang disebut tabel kontingensi.
+
+Analisis korespondensi merupakan sebuah teknik multivariat yang digunakan untuk mengeksplorasi dan mempelajari hubungan peubah-peubah kualitatif dengan cara mereduksi dimensi dan memetakannya ke dalam grafik dua dimensi. Konsepnya mirip dengan analisis komponen utama, namun digunakan pada peubah kategorik yang direpresentasikan pada tabel kontingensi. Analisis korespondensi digunakan untuk mendeteksi dan memberikan penjelasan tentang hubungan antara dua variabel di dalam data yang berbentuk matriks berdimensi besar dan dapat digunakan untuk mencari pengelompokan yang homogen dari individu.
+
+Beberapa unsur-unsur yang ada dalam analisis korespondensi antara lain:
+
+1. **Tabel kontingensi**, yaitu data dasar tabel yang menggambarkan frekuensi pengamatan untuk kombinasi dua atau lebih peubah kategorik.
+2. **Koordinat korespondensi**, di mana setiap peubah kategorik memiliki nilai koordinat dalam ruang dimensi rendah yang direpresentasikan oleh analisis korespondensi. Koordinat ini mencerminkan hubungan antar peubah. 
+3. **Singular value**. Analisis korespondensi melibatkan dekomposisi nilai tunggal dari matriks frekuensi dalam tabel kontingensi. Nilai-nilai tunggal ini membantu mengidentifikasi dimensi utama yang mencakup variasi dalam data.
+4. **Skor korespondensi**, yaitu nilai proyeksi dari data asli ke ruang dimensi rendah yang dihasilkan oleh analisis korespondensi yang digunakan untuk memahami posisi relatif dari kategori dalam dimensi yang lebih rendah.
+5. **Inersia** adalah ukuran variasi dalam data yang dijelaskan oleh dimensi-dimensi yang dihasilkan oleh analisis korespondensi. Inersia membantu mengevaluasi seberapa baik dimensi tersebut menjelaskan pola dalam data.
+
+#### Kelebihan dan Kekurangan
+
+Analisis korespondensi juga memiliki kelebihan bila dibandingkan dengan analisis lainya, yaitu:
+
+1. Sangat tepat untuk menganalisis data variabel kategori ganda yang dapat digambarkan secara sederhana dalam data tabulasi silang.
+2. Tidak hanya menggambarkan hubungan antar baris dengan kolom tetapi juga antar kategori dalam setiap baris dan kolom.
+3. Memberikan tampilan grafik gabungan dari kategori baris dan kolom dalam satu gambar yang berdimensi dua.
+4. Cukup fleksibel untuk digunakan dalam data matrik berukuran besar.
+
+Selain itu, analisis korespondensi memiliki beberapa kekurangan antara lain:
+
+1. Analisis ini tidak cocok untuk pengujian hipotesis tetapi sangat tepat untuk eksplorasi data.
+2. Tidak mempunyai suatu metode khusus untuk menentukan atau memutuskan jumlah dimensi yang tepat.
+
+#### Asumsi
+
+Beberapa asumsi yang mendasari analisis korespondensi:
+
+1. Ukuran jarak Khi-kuadrat (${\chi}^2$) antar titik-titik (nilai kategori) analogi dengan konsep korelasi antar variabel.
+2. Variabel kolom yang tepat di variabel kategori baris diasumsikan homogen.
+3. Analisis korespondensi adalah sebuah teknik nonparametrik yang tidak memerlukan pengujian asumsi seperti kenormalan, autokorelasi, multikolinieritas, heteroskedastisitas, linieritas sebelum melakukan analisis selanjutnya.
+4. Dimensi yang terbentuk dalam analisis korespondensi disebabkan dari kontribusi titik-titik dari dimensi yang terbentuk dan penamaan dari dimensinya subjektif dari kebijakan, pendapat, dan error.
+5. Dalam analisis korespondensi variabel yang digunakan yaitu variabel diskrit (nominal/ordinal) yang mempunyai banyak kategori.
+
+#### Langkah-Langkah
+
+Beberapa langkah yang dilakukan untuk membentuk plot korespondensi antara lain:
+
+1. Siapkan data, kemudian bentuk tabel kontingensi.
+2. Berdasarkan tabel kontingensi, bentuk tabel korespondensi dengan cara membagi masing-masing nilai dalam tabel kontingensi dengan n (banyak amatan).
+3. Bentuk vektor baris, vektor kolom, matriks baris, dan matriks kolom berdasarkan tabel korespondensi yang telah dibuat.
+4. Lakukan analisis profil baris dengan membagi proporsi/frekuensi masing-masing elemen dengan total proporsi/frekuensi masing-masing baris.
+5. Lakukan analisis profil kolom dengan membagi proporsi/frekuensi masing-masing elemen dengan total proporsi/frekuensi masing-masing kolom.
+6. Tentukan koordinat profil baris dan kolom dengan menggunakan Generalized SVD.
+7. Bentuk plot korespondensi berdasarkan koordinat yang diperoleh.
+
+## Studi Kasus 1 - Data Stasiun TV
+
+- Suatu survei dilakukan untuk mengetahui stasiun TV favorit menurut pemirsa dengan kelompok usia tertentu.
+- Ada 5 stasiun TV yang menjadi pilihan di dalam survei, yaitu **MetroTV**, **Indosiar**, **NETTV**, **TransTV**, dan **RCTI**.
+- Sementara respondennya, dikelompokkan dalam 4 kelompok umur, yaitu **> 50 th**, **40-50 th**, **20-39 th**, dan **10-19 th**.
+
+### Import Data
+
+```{r}
+stasiun_tv <- read.csv("https://raw.githubusercontent.com/nurkhamidah/dat/main/stasiun_tv.csv", sep = ";")
+stasiun_tv
+```
+
+#### Penyelesaian Manual
+
+1. **Tabel Kontingensi**
+
+    Dari data yang terbentuk, dapat kita bentuk tabel kontingensi sebagai berikut:
+
+    ```{r}
+    stasiun_tv$Usia <- factor(stasiun_tv$Usia, levels=c("> 50 th", "40-50 th",
+                                                        "20-39 th", "10-19 th"))
+    stasiun_tv$Stasiun.TV <- factor(stasiun_tv$Stasiun.TV,
+                                    levels=c("MetroTV", "Indosiar",
+                                             "NETTV","TransTV","RCTI"))
+    table_count <- xtabs(Jumlah ~ Usia + Stasiun.TV, data = stasiun_tv)
+    table_count
+    ```
+
+2. **Tabel Korespondensi**
+
+    ```{r}
+    n <- sum(table_count)
+    table_coresp <- table_count/n
+    table_coresp
+    ```
+
+3. **Vektor kolom dan vektor baris**
+
+    Berdasarkan matriks korespondensi yang terbentuk, diperoleh vektor kolom dan vektor baris berikut:
+
+    ```{r}
+    c <- colSums(table_coresp)
+    c
+    ```
+
+    ```{r}
+    r <- rowSums(table_coresp)
+    r
+    ```
+
+4. **Matriks kolom dan matriks baris**
+
+    ```{r}
+    Dc <- diag(c)
+    Dc
+    ```
+
+    ```{r}
+    Dr <- diag(r)
+    Dr
+    ```
+
+5. **Analisis profil baris**
+
+    Profil baris diperoleh dengan:
+
+    $$R = Dr^{-1}P$$
+
+    ```{r}
+    R <- solve(Dr)%*%table_coresp
+    rownames(R) <- rownames(table_coresp)
+    R
+    ```
+
+    - Pada kolom MetroTV, dapat dilihat bahwa baris usia >50 tahun mempunyai nilai tertinggi (0.454). Hal ini menunjukkan bahwa stasiun METRO TV menjadi stasiun TV favorit pemirsa yang berusia > 50 tahun.
+    - Pada kolom Indosiar, dapat dilihat bahwa pemirsa dengan rentang usia 40-50 tahun memiliki nilai tertinggi (0.0734). Hal ini menunjukkan bahwa stasiun Indosiar menjadi stasiun TV favorit pemirsa yang berusia 40- 50 tahun.
+    - Pada kolom NETTV, dapat dilihat bahwa baris usia 20-39 tahun memiliki nilai tertingggi (0.5124). Hal ini menunjukkan bahwa statiun NETTV menjadi stasiun TV favorit untuk pemirsa pada rentang usia 20-39 tahun.
+    - Pada kolom TransTV dan RCTI, dapat dilihat bahwa usia 10-19 tahun memiliki nilai tertinggi (0.0646 dan 0.5179). Hal ini menunjukkan bahwa kedua stasiun televisi ini menjadi stasiun TV favorit pemirsa pada rentang usia 10-19 tahun.
+
+    Kemudian diperoleh nilai massa setiap kolom sebagai berikut:
+
+    ```{r}
+    mass_c <- colSums(R)
+    mass_c
+    ```
+
+    Nilai massa terbesar adalah 1.52414 terdapat pada kolom stasiun televisi NETTV, masih sama dengan modus amatan yang kita peroleh pada data awal.
+
+6. **Analisis profil kolom**
+
+    Profil baris diperoleh dengan:
+
+    $$C = P Dc^{-1}$$
+
+    ```{r}
+    C <- table_coresp %*% solve(Dc)
+    colnames(C) <- colnames(table_coresp)
+    C
+    ```
+
+    - Usia pada kategori > 50 tahun dan 40-50 tahun, mempunyai massa terbesar pada stasiun televisi MetroTV yaitu 0.2240 dan 0.4729. Hal ini menunjukkan bahwa usia terbanyak yang sering menonton METRO TV adalah pemirsa pada usia > 50 tahun dan 40-50 tahun.
+    - Usia pada kategori 20-39 tahun, mempunyai massa terbesar pada stasiun televisi NETTV yaitu 0.4254. Hal ini menunjukkan bahwa usia terbanyak yang sering menonton NET TV adalah pemirsa pada usia 20-39 tahun.
+    - Usia pada kategori 10-19 tahun, mempunyai massa terbesar pada stasiun televisi RCTI yaitu 0.7203. Hal ini menunjukkan bahwa usia terbanyak yaang sering menonton RCTI adalah pemirsa pada usia 10-19 tahun.
+
+    Kemudian diperoleh nilai massa setiap baris sebagai berikut:
+
+    ```{r}
+    mass_r <- rowSums(C)
+    mass_r
+    ```
+
+    Nilai massa terbesar adalah 1.633683 terdapat pada usia kategori 10-19 tahun, jadi berbeda dengan modus amatan yang diperoleh pada data awal yaitu pada kategori usia 20-39 tahun.
+
+7. **Menentukan koordinat profil baris dan kolom**
+
+    Koordinat baris dan kolom yang ditentukan menggunakan GSVD melalui matriks:
+
+    $$P-rc'$$
+
+    ```{r}
+    Prc <- table_coresp - r%*%t(c)
+    Prc
+    ```
+
+    Kemudian matriks Z diperoleh melalui:
+
+    ```{r}
+    Z <- diag(1/sqrt(diag(Dr)))%*%Prc%*%diag(1/sqrt(diag(Dc)))
+    Z
+    ```
+
+    ```{r}
+    Du <- diag(sqrt(eigen(Z %*% t(Z))$values))[1:2,1:2]
+    Du
+    ```
+
+    Kemudian dari matriks **Z** yang sudah diperoleh, dicari matriks **U** (vektor ciri dari **ZZ'**) dan matriks **V** (vektor ciri dari matriks **Z'Z**).
+
+    ```{r}
+    library(factoextra)
+    U <- eigen(Z %*% t(Z))$vectors
+    U
+    A <- (sqrt(Dr) %*% U)[,1:2]
+    A
+    ```
+
+    ```{r}
+    V <- eigen(t(Z) %*% Z)$vectors
+    V
+    B <- (sqrt(Dc) %*% V)[,1:2]
+    B
+    ```
+
+    **Koordinat baris**
+    ```{r}
+    rows <- solve(Dr)%*%A%*%Du
+    rows
+    ```
+
+    **Koordinat kolom**
+    ```{r}
+    cols <- solve(Dc)%*%B%*%Du
+    cols
+    ```
+
+8. **visualisasi berdasarkan koordinat profil baris dan kolom**
+
+```{r}
+row_df <- data.frame(rows)
+col_df <- data.frame(cols)
+colnames(row_df) <- c("Dim.1", "Dim.2")
+rownames(row_df) <- rownames(table_count)
+colnames(col_df) <- c("Dim.1", "Dim.2")
+rownames(col_df) <- colnames(table_count)
+row_df["Var"] <- "Usia"
+row_df["Size"] <- 2
+col_df["Var"] <- "Stasiun TV"
+col_df["Size"] <- 2
+ca.plot.df <- rbind(col_df, row_df)
+ca.plot.df["Label"] <- rownames(ca.plot.df)
+ca.plot.df
+```
+
+```{r}
+library(ggplot2)
+p <- ggplot(ca.plot.df, aes(x = Dim.1, y = Dim.2,
+                       col = Var, shape = Var,
+                       label = Label, size = Size)) +
+  geom_vline(xintercept = 0, lty = "dashed", alpha = .5) +
+  geom_hline(yintercept = 0, lty = "dashed", alpha = .5) +
+  geom_point() + geom_text(check_overlap = T, hjust=-0.15)
+
+plot(p)
+```
+
+#### Penyelesaian dengan R
+
+Untuk menyelesaikan analisis korespondensi dengan R, data yang digunakan adalah data yang telah direpresentasikan pada tabel kontingensi, sebagaimana yang tersimpan pada objek `table_count`. _Package_ yang digunakan adalah `FactoMineR` dengan fungsi `CA()`, serta visualisasi menggunakan `factoextra`.
+
+```{r}
+library(factoextra)
+library(FactoMineR)
+table_count
+```
+
+###### Eksplorasi Data
+
+Coba kita lakukan visualisasi dari tabel kontingensi yang terbentuk.
+
+```{r}
+# install.packages("gplots") # run ini jika package belum terinstall
+library(gplots)
+balloonplot(table_count, main ="Tabel Kontingensi Stasiun TV x Usia", xlab ="", ylab="", label = FALSE, show.margins = FALSE)
+```
+
+Di mana semakin besar lingkaran menunjukkan semakin besar pula nilai yang direpresentasikan.
+
+```{r}
+chisq <- chisq.test(table_count)
+chisq
+```
+
+Diperoleh dari hasil uji Khi-kuadrat, bahwa kedua peubah (stasiun TV dan rentang usia) secara signifikan saling terkait. 
+
+###### Membentuk model _Correspondence Analysis_
+
+```{r}
+model_tv <- CA(table_count, graph = F)
+```
+
+Untuk melihat objek/informasi apa saja yang terdapat dalam model, lakukan:
+
+```{r}
+print(model_tv)
+```
+
+Dengan menggunakan _package_ `factoextra`, kita dapat memperoleh banyak informasi melalui fungsi-fungsi berikut:
+
+- `get_eigenvalue(model)`, mengekstraksi nilai akar ciri.
+- `fviz_screeplot(model)`, melakukan visualisasi presentase keragaman yang diperoleh.
+- `get_ca_row(model)`, `get_ca_col(model)`, melakukan analisis profil baris dan kolom.
+- `fviz_ca_row(model)` `fviz_ca_col(model)`, melakukan visualisasi profil baris dan kolom.
+- `fviz_ca_biplot(model)` untuk melakukan visualisasi keduanya.  
+
+  
+1. **Akar/vektor ciri**
+
+```{r}
+eig.val <- get_eigenvalue(model_tv)
+eig.val
+```
+
+2. **Presentase keragaman**
+
+```{r}
+fviz_screeplot(model_tv, addlabels = TRUE)
+```
+  
+Dapat dilihat bahwa untuk mereduksi menjadi 2 dimensi saja, kita sudah mendapatkan 99.63% keragaman dalam data.
+
+3. **Analisis dan visualisasi profil baris**
+
+```{r}
+row <- get_ca_row(model_tv)
+row
+```
+
+- Koordinat dari profil baris 
+
+```{r}
+row$coord
+```
+
+Untuk memetakan menjadi dua dimensi, maka hanya perlu melihat _Dim 1_ dan _Dim 2_ nya saja.
+
+- Kontribusi keragaman profil baris
+
+```{r}
+row$contrib
+```
+
+Profil baris yang berkontribusi paling banyak kepada _Dim 1_ dan _Dim 2_ adalah baris yang paling penting dalam menjelaskan keragaman data. Dalam hal ini, responden berusia 10-19 tahun dan 20-39 tahun dianggap sebagai responden yang menyumbang keragaman paling besar.
+
+- Plot profil baris
+
+```{r}
+fviz_ca_row(model_tv, col.row="steelblue", shape.row = 15)
+```
+
+-- Baris dengan profil serupa dikelompokkan bersama.  
+-- Baris yang berkorelasi negatif diposisikan pada sisi yang saling berlawanan (kuadran berlawanan).  
+` `
+  
+4. **Analisis dan visualisasi profil kolom**
+
+```{r}
+col <- get_ca_col(model_tv)
+col
+```
+
+- Koordinat dari profil kolom 
+
+```{r}
+col$coord
+```
+
+Untuk memetakan menjadi dua dimensi, maka hanya perlu melihat _Dim 1_ dan _Dim 2_ nya saja.
+
+- Kontribusi keragaman profil kolom
+
+```{r}
+col$contrib
+```
+
+Profil kolom yang berkontribusi paling banyak kepada _Dim 1_ dan _Dim 2_ adalah baris yang paling penting dalam menjelaskan keragaman data. Dalam hal ini, stasiun TV TransTV dan NETTV dianggap sebagai stasiun TV yang menyumbang keragaman paling besar.
+
+- Plot profil kolom
+
+```{r}
+fviz_ca_col(model_tv, col.col="steelblue", shape.col = 15)
+```
+
+5. **Pembentukan plot korespondensi**
+
+```{r}
+fviz_ca_biplot(model_tv, repel = TRUE)
+```
+
+- Plot dalam gambar diatas, menunjukkan bagaimana korelasi antara stasiun TV favorit dengan berbagai kategori usia.
+- Terlihat bahwa usia kategori 10-19 tahun berdekatan dengan stasiun televisi RCTI dan TransTV, artinya jelas bahwa pemirsa dengan rentang usia 10-19 tahun lebih sering menonton stasiun RCTI dan TransTV dibanding stasiun televisi lainnya.
+- Kemudian pemirsa dengan kategori usia 20-39 tahun lebih sering menonton stasiun televisi NETTV.
+- Terakhir, pemirsa dengan kategori usia 40-50 tahun dan > 50 tahun lebih sering menonton stasiun televisi Indosiar dan MetroTV dibanding stasiun televisi lainnya.
+
+## Studi Kasus 2 - Data Kenyamanan Kerja x Pendapatan
+
+Suatu data frekuensi tentang hubungan antara kenyamanan kerja dengan pendapatan yang disajikan pada tabel berikut :
+
+1. **Import Data**
+```{r}
+df_kerja <- read.csv("https://raw.githubusercontent.com/nurkhamidah/dat/main/kenyamanan_pendapatan.csv", sep = ";")
+rownames(df_kerja) <- df_kerja$X
+df_kerja <- df_kerja[,-1]
+df_kerja
+```
+
+2. **Eksplorasi dengan uji Khi-kuadrat**
+
+H0 : variabel baris dan kolom dari tabel kontingensi adalah independen.
+H1 : variabel baris dan kolom dependen.
+
+```{r}
+chisq.test(df_kerja)
+```
+
+Karena diperoleh _p-value_ < 2.2e-16 maka H0 ditolak artinya terdapat hubungan yang erat antara pendapatan dan kenyamanan pekerjaan.
+
+3. **Analisis korespondensi**
+
+`library(ca)` adalah _package_ R untuk mengaktifkan fungsi analisis korespondensi, jika belum tersedia `install.packages(ca)`
+
+```{r}
+# install.packages("ca")
+library(ca)
+fit <- ca(df_kerja)
+summary(fit)
+```
+
+`fit=ca(data)` digunakan untuk melakukan analisis korespondensi. Diperoleh total keragaman yang dapat dijelaskan adalah sebesar 100%.
+
+4. **Analisis profil baris dan kolom**
+```{r}
+n <- sum(df_kerja)
+sum_row <- apply(df_kerja, 1, sum)
+sum_row/n
+```
+
+```{r}
+rows <- df_kerja/sum_row
+rows
+```
+
+```{r}
+sum_col <- apply(df_kerja, 2, sum)
+sum_col/n
+```
+
+```{r}
+cols <- df_kerja/sum_col
+cols
+```
+
+5. **Pembentukan plot korespondensi**
+
+```{r}
+fit
+```
+
+```{r}
+plot(fit)
+```
+
+- Pekerja yang merasa Sangat tidak nyaman dan kurang nyaman dengan pekerjaannya cenderung yang memiliki pendapatan < 25juta.
+- Pendapatan diantara 25 juta hingga 50 juta cenderung merasa biasa saja terhadap pekerjaannya.
+- Pendapatan yang lebih dari 50 juta merasa Nyaman dengan pekerjaannya.
